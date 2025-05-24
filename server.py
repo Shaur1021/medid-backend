@@ -259,7 +259,23 @@ def ask():
                 "emergency_advice": "Consult a healthcare professional."
             })
 
-        return jsonify({"results": results})
+        unique = []
+        seen = set()
+        for r in results:
+            key = (r["selected_case"], r["selected_case_details"])
+            if key not in seen:
+                unique.append(r)
+                seen.add(key)
+
+        if not unique:
+            unique.append({
+                "possible_cases": ["Unknown"],
+                "selected_case": "Unknown",
+                "selected_case_details": "Not enough information.",
+                "emergency_advice": "Consult a healthcare professional."
+            })
+
+        return jsonify({"results": unique})
     except Exception as e:
         print("Error in /ask:", e)
         return jsonify({"error": str(e)}), 500
