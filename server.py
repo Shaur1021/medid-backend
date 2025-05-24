@@ -13,59 +13,54 @@ def home():
     return "MedId backend is running!"
 
 @app.route('/ask', methods=['POST'])
-
-
-@app.route('/ask', methods=['POST'])
 def ask():
     try:
         data = request.json
         symptoms = data.get('symptoms', '').lower()
         duration = data.get('duration', '').lower()
 
-        # Prepare payload for DeepSeek
-        deepseek_payload = {
-            "symptoms": symptoms,
-            "duration": duration
+        prompt = (
+            f"My symptoms are: {symptoms}. Duration: {duration}. "
+            "What could this be? List possible_cases, selected_case, selected_case_details, and emergency_advice in JSON format."
+        )
+
+        groq_api_url = "https://api.groq.com/openai/v1/chat/completions"
+        groq_api_key = os.environ.get("GROQ_API_KEY")  # Set this in your Render environment
+
+        if not groq_api_key:
+            return jsonify({"error": "Groq API KEY not set"}), 500
+
+        payload = {
+            "model": "deepseek-r1-distill-llama-70b",
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.6,
+            "max_tokens": 1024
         }
-
-        # Get DeepSeek API URL and KEY from environment variables
-        deepseek_url = os.environ.get("DEEPSEEK_API_URL")
-        deepseek_key = os.environ.get("DEEPSEEK_API_KEY")
-
-        if not deepseek_url or not deepseek_key:
-            return jsonify({"error": "DeepSeek API URL or KEY not set"}), 500
-
         headers = {
-            "Authorization": f"Bearer {deepseek_key}",
+            "Authorization": f"Bearer {groq_api_key}",
             "Content-Type": "application/json"
         }
 
-        # Send request to DeepSeek
-        resp = requests.post(deepseek_url, json=deepseek_payload, headers=headers, timeout=15)
+        resp = requests.post(groq_api_url, json=payload, headers=headers, timeout=15)
         if resp.status_code != 200:
-            return jsonify({"error": "DeepSeek API error", "details": resp.text}), 500
+            print("Groq API error details:", resp.text)
+            return jsonify({"error": "Groq API error", "details": resp.text}), 500
 
-        # Expect DeepSeek to return a list of results with the required fields
-        deepseek_results = resp.json().get("results", [])
-
-        # Remove duplicates if needed
-        unique = []
-        seen = set()
-        for r in deepseek_results:
-            key = (r.get("selected_case"), r.get("selected_case_details"))
-            if key not in seen:
-                unique.append(r)
-                seen.add(key)
-
-        if not unique:
-            unique.append({
-                "possible_cases": ["Unknown"],
-                "selected_case": "Unknown",
-                "selected_case_details": "Not enough information.",
-                "emergency_advice": "Consult a healthcare professional."
-            })
-
-        return jsonify({"results": unique})
+        response_json = resp.json()
+        if "choices" in response_json:
+            content = response_json["choices"][0]["message"]["content"]
+            # Try to parse content as JSON
+            try:
+                import json as pyjson
+                result = pyjson.loads(content)
+                return jsonify({"results": [result]})
+            except Exception:
+                # If not JSON, just return the raw content
+                return jsonify({"results": [{"raw": content}]})
+        else:
+            return jsonify({"error": "Unexpected Groq response", "details": response_json}), 500
 
     except Exception as e:
         print("Error in /ask:", e)
