@@ -1,10 +1,11 @@
 import os
+import re
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
+
 app = Flask(__name__)
 
-# Get allowed origin from environment variable
 allowed_origin = os.environ.get("DEEPSEEK_KEY", "*")
 CORS(app, origins=[allowed_origin])
 
@@ -25,7 +26,7 @@ def ask():
         )
 
         groq_api_url = "https://api.groq.com/openai/v1/chat/completions"
-        groq_api_key = os.environ.get("GROQ_API_KEY")  # Set this in your Render environment
+        groq_api_key = os.environ.get("GROQ_API_KEY")
 
         if not groq_api_key:
             return jsonify({"error": "Groq API KEY not set"}), 500
@@ -51,13 +52,16 @@ def ask():
         response_json = resp.json()
         if "choices" in response_json:
             content = response_json["choices"][0]["message"]["content"]
-            # Try to parse content as JSON
+            # Extract JSON from the response, ignoring any text before it
             try:
                 import json as pyjson
-                result = pyjson.loads(content)
-                return jsonify({"results": [result]})
+                match = re.search(r'(\{[\s\S]*\})', content)
+                if match:
+                    result = pyjson.loads(match.group(1))
+                    return jsonify({"results": [result]})
+                else:
+                    return jsonify({"results": [{"raw": content}]})
             except Exception:
-                # If not JSON, just return the raw content
                 return jsonify({"results": [{"raw": content}]})
         else:
             return jsonify({"error": "Unexpected Groq response", "details": response_json}), 500
