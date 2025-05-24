@@ -1,11 +1,12 @@
-
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+
 app = Flask(__name__)
-CORS(app, origins=["chrome-extension://cemkbgmnnmnalagobjeiohcaldkjjemc"])
 
-
-CORS(app)  # Enable CORS for extension use
+# Get allowed origin from environment variable
+allowed_origin = os.environ.get("DEEPSEEK_KEY", "*")
+CORS(app, origins=[allowed_origin])
 
 @app.route('/')
 def home():
