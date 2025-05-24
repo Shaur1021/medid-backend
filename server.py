@@ -10,6 +10,18 @@ CORS(app)  # Enable CORS for extension use
 def home():
     return "MedId backend is running!"
 
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+app = Flask(__name__)
+CORS(app, origins=["chrome-extension://cemkbgmnnmnalagobjeiohcaldkjjemc"])
+
+
+CORS(app)  # Enable CORS for extension use
+
+@app.route('/')
+def home():
+    return "MedId backend is running!"
+
 @app.route('/ask', methods=['POST'])
 def ask():
     try:
