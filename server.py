@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # This enables CORS for all routes
 
 @app.route('/')
 def home():
@@ -13,9 +15,8 @@ def ask():
         symptoms = data.get('symptoms', '')
         duration = data.get('duration', '')
 
-        # Simulate AI logic based on the symptoms and duration
         possible_cases = ["Common Cold", "Flu", "COVID-19"]
-        selected_case = possible_cases[1]  # For demo, pick "Flu"
+        selected_case = possible_cases[1]
         selected_case_details = "Flu: lasts 5-7 days, treat with rest and fluids."
         emergency_advice = "See a doctor if symptoms worsen or high fever persists."
 
