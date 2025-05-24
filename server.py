@@ -21,11 +21,18 @@ def ask():
 
         # Each block checks for a symptom and appends a result if matched
         if "cough" in symptoms and "fever" in symptoms:
-            results.append({
+                results.append({
                 "possible_cases": ["Flu", "COVID-19", "Common Cold"],
                 "selected_case": "Flu",
                 "selected_case_details": "Flu: lasts 5-7 days, treat with rest and fluids.",
                 "emergency_advice": "See a doctor if symptoms worsen or high fever persists."
+                })
+        if "fever" in symptoms:
+            results.append({
+            "possible_cases": ["Flu", "COVID-19", "Infection"],
+            "selected_case": "Flu",
+            "selected_case_details": "Flu: lasts 5-7 days, treat with rest and fluids.",
+            "emergency_advice": "See a doctor if fever is high or lasts more than 3 days."
             })
         if "runny nose" in symptoms or "sneezing" in symptoms:
             results.append({
